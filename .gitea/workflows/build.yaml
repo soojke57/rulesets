@@ -51,25 +51,25 @@ jobs:
 
           /tmp/mihomo -v
 
-      - name: Convert YAML to MRS
+      - name: Convert TXT to MRS
         run: |
           mkdir -p dist
 
           shopt -s nullglob
-          files=(sources/*.yaml)
+          files=(sources/*.txt)
 
           if [ ${#files[@]} -eq 0 ]; then
-            echo "No YAML files found"
+            echo "No TXT files found"
             exit 1
           fi
 
           for src in "${files[@]}"; do
-            name=$(basename "$src" .yaml)
+            name=$(basename "$src" .txt)
 
             echo "Converting $src"
 
             /tmp/mihomo convert-ruleset \
-              domain yaml \
+              domain text \
               "$src" \
               "dist/$name.mrs"
 
