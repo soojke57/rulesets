@@ -1,0 +1,92 @@
+
+name: Build Mihomo MRS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sources/**'
+      - '.gitea/workflows/**'
+
+  schedule:
+    - cron: '0 3 * * *'
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y curl jq gzip ca-certificates
+
+      - name: Download Mihomo
+        run: |
+          URL=$(curl -fsSL \
+            https://api.github.com/repos/MetaCubeX/mihomo/releases/latest \
+            | jq -r '.assets[] |
+              select(.name | test("^mihomo-linux-amd64-compatible-v.*\\.gz$")) |
+              .browser_download_url' | head -n 1)
+
+          test -n "$URL" || {
+            echo "Mihomo binary not found"
+            exit 1
+          }
+
+          curl -fsSL "$URL" -o /tmp/mihomo.gz
+          gzip -dc /tmp/mihomo.gz > /tmp/mihomo
+          chmod +x /tmp/mihomo
+
+          /tmp/mihomo -v
+
+      - name: Convert YAML to MRS
+        run: |
+          mkdir -p dist
+
+          shopt -s nullglob
+          files=(sources/*.yaml)
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No YAML files found"
+            exit 1
+          fi
+
+          for src in "${files[@]}"; do
+            name=$(basename "$src" .yaml)
+
+            echo "Converting $src"
+
+            /tmp/mihomo convert-ruleset \
+              domain yaml \
+              "$src" \
+              "dist/$name.mrs"
+
+            test -s "dist/$name.mrs"
+          done
+
+      - name: Publish MRS files
+        run: |
+          git config user.name "MRS Builder"
+          git config user.email "mrs-builder@users.noreply.gitea"
+
+          git add dist/
+
+          if git diff --cached --quiet; then
+            echo "No changes in MRS files"
+            exit 0
+          fi
+
+          git commit -m "chore: build MRS"
+          git push
