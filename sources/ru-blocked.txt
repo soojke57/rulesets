@@ -620,3 +620,10 @@
 +.zoloto.city
 +.zona.media
 +.zyro.com
++.tmdb-image-prod.b-cdn.net
++.thetvdb.com
++.tvdb.com
++.fanart.tv
++.imdb.com
++.imdb-api.com
++.sonarr.tv
