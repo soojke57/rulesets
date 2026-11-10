@@ -450,6 +450,8 @@
 +.rutor.org
 +.rutracker.cc
 +.rutracker.org
++.rutracker.ru
++.rutracker.net
 +.sakh.biz
 +.sakh.com
 +.sakhalin.biz
